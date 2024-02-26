@@ -1,11 +1,15 @@
 import tkinter as tk
+from tkinter import messagebox
 
 def add_digit(digit):
-    value = calc.get() + str(digit)
-    if value[0] == '0':
+    value = calc.get()
+    if value[0] == '0' and len(value) == 1:
         value = value[1:]
+    calc['state'] = tk.NORMAL
     calc.delete(0, tk.END)
-    calc.insert(0, value)
+    calc.insert(0, value+digit)
+    calc['state'] = 'readonly'
+    
 
 def add_operation(operation):
     value = calc.get()
@@ -14,20 +18,31 @@ def add_operation(operation):
     elif '+' in value or '-' in value or '/' in value or '*' in value:
         calculate()
         value = calc.get()
+    calc['state'] = tk.NORMAL
     calc.delete(0, tk.END)
     calc.insert(0, value+operation)
+    calc['state'] = 'readonly'
 
 
 
 def calculate():
+    calc['state'] = tk.NORMAL
     value = calc.get()
     calc.delete(0, tk.END)
     if value[-1] == '+':
         calc.insert(0, int(value[:-1]) + int(value[:-1]))
     elif value[-1] == '*':
         calc.insert(0, int(value[:-1]) * int(value[:-1]))
-    else:
+    calc.delete(0, tk.END   )
+    try:
         calc.insert(0, eval(value))
+    # except (NameError, SyntaxError):
+    #     messagebox.showinfo('Attention!', 'You can only enter numbers!!!\nYou entered another symbols')
+    #     calc.insert(0, 0)
+    except (ZeroDivisionError):
+        messagebox.showinfo('Attention!', "You can't divide by zero!!!")
+        calc.insert(0, 0)
+    calc['state'] = 'readonly'
     
 
 def make_digit_button(digit):
@@ -38,20 +53,37 @@ def make_operation_button(operation):
                     command=lambda: add_operation(operation))
 
 def clean():
+    calc['state'] = tk.NORMAL
     calc.delete(0, tk.END)
-    return calc.insert(0, '0')
+    calc.insert(0, '0')
+    calc['state'] = 'readonly'
+    
+
 
 def make_calc_button(operation):
     return tk.Button(text=operation, bd=4, font=('Arial', 13), command=calculate)
 
+
+def press_key(event):
+    if event.char.isdigit():
+        add_digit(event.char)
+    elif event.char in '+-/*':
+        add_operation(event.char)
+    elif event.char == '\r':
+        calculate()
+    elif event.char == 'c':
+        clean()
 
 win = tk.Tk()
 win.geometry(f'240x270+100+200')
 win['bg'] = '#27ffe7'
 win.title('Calculator')
 
+win.bind('<Key>', press_key)
+
 calc = tk.Entry(win, justify='right', font=('Arial', 15), width=15)
 calc.insert(0, '0')
+calc['state'] = 'readonly'
 calc.grid(row=0, column=0, columnspan=4, sticky='we', padx=5)
 
 make_digit_button('1').grid(row=1, column=0, sticky='wens', padx=5, pady=5)
